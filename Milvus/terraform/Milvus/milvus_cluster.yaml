@@ -1,0 +1,53 @@
+###################################
+# Service account
+# - this service account are used by External S3 access
+###################################
+serviceAccount:
+  create: false
+  name: milvus-s3-access-sa
+
+# Close in-cluster minio
+###################################
+minio:
+  enabled: false
+
+###################################
+# External S3
+# - these configs are only used when `externalS3.enabled` is true
+###################################
+externalS3:
+  enabled: true
+  host: "s3.ap-southeast-1.amazonaws.com"
+  port: "443"
+  useSSL: true
+  bucketName: "{s3_bucket_name}"
+  rootPath: ""
+  useIAM: true
+  cloudProvider: "aws"
+  iamEndpoint: ""
+
+###################################
+# Close in-cluster pulsar
+################################### 
+pulsar:
+  enabled: false
+
+kafka:
+  enabled: true
+
+###################################
+# External kafka
+# - these configs are only used when `externalKafka.enabled` is true
+###################################
+# externalKafka:
+#   enabled: true
+#   brokerList: "b-1.suppordevmilvusms.ismidn.c4.kafka.ap-southeast-1.amazonaws.com:9096, b-3.suppordevmilvusms.ismidn.c4.kafka.ap-southeast-1.amazonaws.com:9096, b-2.suppordevmilvusms.ismidn.c4.kafka.ap-southeast-1.amazonaws.com:9096"
+#   securityProtocol: SASL_SSL
+#   sasl:
+#     mechanisms: SCRAM-SHA-512
+
+extraConfigFiles:
+  user.yaml: |+
+    common:
+      security:
+        authorizationEnabled: true

@@ -1,0 +1,15 @@
+attu:
+  enabled: true
+  name: attu
+  ingress:
+    enabled: true
+    annotations: 
+      kubernetes.io/ingress.class: alb # Annotation: set ALB ingress type
+      alb.ingress.kubernetes.io/scheme: internet-facing #Places the load balancer on public subnets
+      alb.ingress.kubernetes.io/target-type: ip #The Pod IPs should be used as the target IPs (rather than the node IPs)
+      alb.ingress.kubernetes.io/group.name: attu # Groups multiple Ingress resources
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-southeast-1:{AWS_ACCOUNT_ID}:certificate/{id}
+      alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    hosts:
+      -

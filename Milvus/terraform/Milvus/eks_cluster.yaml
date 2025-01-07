@@ -1,0 +1,53 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: "milvus-cluster"
+  region: "ap-southeast-1"
+  version: "1.29"
+
+iam:
+  withOIDC: true
+
+  serviceAccounts:
+    - metadata:
+        name: aws-load-balancer-controller
+        namespace: kube-system
+      wellKnownPolicies:
+        awsLoadBalancerController: true
+    - metadata:
+        name: milvus-s3-access-sa
+        # if no namespace is set, "default" will be used;
+        # the namespace will be created if it doesn't exist already
+        namespace: milvus
+        labels: { aws-usage: "milvus" }
+      attachPolicyARNs:
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+
+# Use existed VPC to create EKS.
+# If you don't config vpc subnets, eksctl will automatically create a brand new VPC
+vpc:
+  subnets:
+    private:
+      ap-southeast-1a: { id: subnet-xxx }
+      ap-southeast-1b: { id: subnet-xxx }
+      ap-southeast-1c: { id: subnet-xxx }
+
+managedNodeGroups:
+  - name: ng-milvus
+    labels: { role: milvus }
+    instanceType: m6i.large
+    desiredCapacity: 1
+    privateNetworking: true
+
+addons:
+  - name: vpc-cni # no version is specified so it deploys the default version
+    attachPolicyARNs:
+      - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+  - name: coredns
+    version: latest # auto discovers the latest available
+  - name: kube-proxy
+    version: latest
+  - name: aws-ebs-csi-driver
+    wellKnownPolicies: # add IAM and service account
+      ebsCSIController: true

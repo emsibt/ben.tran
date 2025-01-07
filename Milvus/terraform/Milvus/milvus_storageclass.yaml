@@ -1,0 +1,12 @@
+# Milvus uses etcd as meta storage and needs to rely on the gp3 StorageClass to create and manage PVC.
+# Documentation: https://milvus.io/docs/eks.md#Create-a-StorageClass
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-gp3-sc
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: gp3

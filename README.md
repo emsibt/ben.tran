@@ -1,0 +1,1 @@
+<h1>Welcome to Ben's blog</h1>
