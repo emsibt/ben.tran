@@ -1,0 +1,50 @@
+# Template for reuse by .gitlab-ci.yml in repository locally
+.ecr_auth:
+  before_script: &ecr_auth
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - export AWS_ACCOUNT=$AWS_ACCOUNT
+    - apk add aws-cli
+    - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
+# Export DOCKER_AUTH_CONFIG variable for CI to authenticate AWS ECR
+.ecr_remote_auth:
+  image: public.ecr.aws/docker/library/alpine:3
+  needs:
+    - project: "${reposity_url}"
+      job: ecr_auth
+      ref: "infra"
+      artifacts: true
+  script:
+    - apk add curl jq
+    - DOCKER_AUTH_CONFIG=$(echo "{\"auths\":{\"$AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-1.amazonaws.com\":{\"auth\":\"$(printf "%s" "$AUTH_CONFIG")\"}}}")
+    - 'UPDATE_CONDITION=$(curl -XGET --header "PRIVATE-TOKEN: $GITLAB_AUTH_TOKEN" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/variables/DOCKER_AUTH_CONFIG")'
+    - >
+      if [ "$UPDATE_CONDITION" == "{\"message\":\"404 Variable Not Found\"}" ]; then
+        echo "Add new DOCKER_AUTH_CONFIG variable"
+        curl -XPOST --header "PRIVATE-TOKEN: $GITLAB_AUTH_TOKEN" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/variables" --form "key=DOCKER_AUTH_CONFIG" --form "value=$DOCKER_AUTH_CONFIG" --form "raw=true"  > /dev/null 2>&1
+      else
+        echo "Update DOCKER_AUTH_CONFIG variable"
+        curl -XPUT --header "PRIVATE-TOKEN: $GITLAB_AUTH_TOKEN" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/variables/DOCKER_AUTH_CONFIG" --form "value=$DOCKER_AUTH_CONFIG" --form "raw=true"  > /dev/null 2>&1
+      fi
+
+# Export DOCKER_AUTH_CONFIG variable for CI to authenticate Gitlab CR
+.glab_cr_remote_auth:
+  image: public.ecr.aws/docker/library/alpine:3
+  needs:
+    - project: "${reposity_url}"
+      job: glab_cr_auth
+      ref: "infra"
+      artifacts: true
+  script:
+    - apk add curl jq
+    - DOCKER_AUTH_CONFIG=$(printf "%s" "$AUTH_CONFIG" | jq -r)
+    - 'UPDATE_CONDITION=$(curl -XGET --header "PRIVATE-TOKEN: $GITLAB_AUTH_TOKEN" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/variables/DOCKER_AUTH_CONFIG")'
+    - >
+      if [ "$UPDATE_CONDITION" == "{\"message\":\"404 Variable Not Found\"}" ]; then
+        echo "Add new DOCKER_AUTH_CONFIG variable"
+        curl -XPOST --header "PRIVATE-TOKEN: $GITLAB_AUTH_TOKEN" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/variables" --form "key=DOCKER_AUTH_CONFIG" --form "value=$DOCKER_AUTH_CONFIG" --form "raw=true"  > /dev/null 2>&1
+      else
+        echo "Update DOCKER_AUTH_CONFIG variable"
+        curl -XPUT --header "PRIVATE-TOKEN: $GITLAB_AUTH_TOKEN" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/variables/DOCKER_AUTH_CONFIG" --form "value=$DOCKER_AUTH_CONFIG" --form "raw=true"  > /dev/null 2>&1
+      fi

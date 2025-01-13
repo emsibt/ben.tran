@@ -1,0 +1,31 @@
+# Export ECR_AUTH_CONFIG for remote repository
+ecr_auth:
+  before_script:
+    - !reference [.ecr_auth, before_script]
+  stage: .pre
+  when: always
+  script:
+    - apk add jq
+    - echo "AUTH_CONFIG=$(cat /root/.docker/config.json | jq -r ".auths.\"$AWS_ACCOUNT.dkr.ecr.ap-southeast-1.amazonaws.com\".auth")" >> auth.env
+  environment:
+    name: infra
+  rules:
+    - when: on_success
+  artifacts:
+    reports:
+      dotenv: auth.env
+
+# Export GLAB_CR_AUTH_CONFIG for remote repository
+glab_cr_auth:
+  stage: .pre
+  when: always
+  script:
+    - apk add jq
+    - echo "AUTH_CONFIG=$(echo $DOCKER_AUTH_CONFIG | jq -c | jq -R)" >> auth.env
+  environment:
+    name: infra
+  rules:
+    - when: on_success
+  artifacts:
+    reports:
+      dotenv: auth.env
