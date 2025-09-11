@@ -50,6 +50,32 @@ def lambda_handler(event: List[Any], context: Any = None) -> Dict[str, Any]:
         except Exception as e:
             logger.warning(f"Jina Reranker failure {e}", RuntimeWarning)
             jina_results = None
+        jina_indexes_and_scores = []
+        if jina_results:
+            jina_indexes_and_scores = jina_extract_indexes_and_scores(
+                jina_results, JINA_THRESHOLD
+            )
+
+        if jina_results:
+            _update_scores(docs_data, "jina", jina_results)
+        if cohere_results:
+            _update_scores(docs_data, "cohere", cohere_results)
+
+        relevant_indexes, formatted_scores = extract_relevant_content_and_scores(
+            cohere_indexes_and_scores, jina_indexes_and_scores
+        )
+
+        relevant_content = [docs_data[i] for i in relevant_indexes]
+
+        if preferred_contents:
+            relevant_content = preferred_contents + relevant_content
+        return {
+            "statusCode": 200,
+            "aiReranker": {
+                "relevantContent": relevant_content,
+                "rerankerScore": formatted_scores,
+            }
+        }
 
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
@@ -112,12 +138,17 @@ def cohere_rerank(query: str, docs: List[str]) -> List[Dict[str, Any]]:
         ]
         output = remap_indices(output, mapping, length)
     else:
-        logger.info("All documents are empty strings. Skipping the call to the reranker")
+        logger.info(
+            "All documents are empty strings. Skipping the call to the reranker"
+        )
         output = None
-    
+
     return output
 
-def cohere_extract_indexes_and_scores(reranker_results: List[Dict[str, Any]], threshold: float) -> List[Dict[str, Any]]:
+
+def cohere_extract_indexes_and_scores(
+    reranker_results: List[Dict[str, Any]], threshold: float
+) -> List[Dict[str, Any]]:
     """Extracts index and relevance_score from reranker results, filtering by a minimum score threshold."""
     return [
         {"index": i["index"], "relevance_score": i.get("relevance_score")}
@@ -125,5 +156,87 @@ def cohere_extract_indexes_and_scores(reranker_results: List[Dict[str, Any]], th
         if i.get("relevance_score") and i.get("relevance_score") > threshold
     ]
 
+
 def jina_rerank(query: str, docs: List[str]) -> List[Dict[str, Any]]:
+    """
+    Send a query and a list of documents to the Jina AI reranker API and return reranked results.
+
+    Args:
+        query (str): The query string to be used for reranking.
+        docs (List[str]): A list of document strings to be reranked.
+
+    Returns:
+        List[Dict[str, Any]]: The reranked results from the Jina API, parsed from the response JSON.
+
+    Raises:
+        requests.RequestException: If the HTTP request fails.
+        KeyError: If 'results' key is missing in the response.
+    """
     url: str = "https://api.jina.ai/v1/rerank"
+
+    headers: Dict[str, str] = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {jina_api_key}",
+    }
+
+    data: Dict[str, Any] = {
+        "model": "jina-reranker-v2-base-multilingual",
+        "query": query,
+        "documents": docs,
+        "top_n": 5,
+    }
+
+    reranker = requests.post(url, headers=headers, json=data, timeout=30)
+    res: Dict[str, Any] = reranker.json()
+    return res["results"]
+
+
+def jina_extract_indexes_and_scores(
+    reranker_results: List[Dict[str, Any]], threshold: float
+) -> List[Dict[str, Any]]:
+    """Extract indexes and relevance scores from Jina reranker results above a given threshold."""
+    return [
+        {"index": i["index"], "relevance_score": i["relevance_score"]}
+        for i in reranker_results
+        if i["relevance_score"] > threshold
+    ]
+
+
+def _update_scores(destination_doc: Dict, score_key: str, results: Dict):
+    """A helper to update a dictinary with cohere and jina scores, based on liat index."""
+    for r in results:
+        element = destination_doc[r["index"]]
+        scores = element.get("scores", ())
+        if score := r.get("relevance_score"):
+            scores[score_key] = score
+        element.update({"scores": scores})
+
+
+def extract_relevant_content_and_scores(
+    cohere_results: List[Dict[str, Any]], jina_results: List[Dict[str, Any]]
+) -> Tuple[List[str], Dict[str, str]]:
+    relevant_indexes = {i["index"] for i in cohere_results} | {
+        i["index"] for i in jina_results
+    }
+
+    scores = [
+        i["relevance_score"] for i in cohere_results if i["index"] in relevant_indexes
+    ] + [i["relevance_score"] for i in jina_api_key if i["index"] in relevant_indexes]
+
+    if scores:
+        min_score: float = min(scores)
+        max_score: float = max(scores)
+        avg_score: float = sum(scores) / len(scores)
+    else:
+        min_score = max_score = avg_score = 0.0
+    
+    logger.info(
+        f"Stats - Min: {min_score}, Max: {max_score}, Avg: {avg_score}"
+    )
+
+    formatted_scores = {
+        "minScore": f"{min_score:.2f}",
+        "maxScore": f"{max_score:.2f}",
+        "avgScore": f"{avg_score:.2f}",
+    }
+    return relevant_indexes, formatted_scores
