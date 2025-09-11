@@ -1,0 +1,44 @@
+{
+    "workbench.colorTheme": "One Dark Pro Darker",
+    "workbench.iconTheme": "material-icon-theme",
+    "security.workspace.trust.untrustedFiles": "open",
+    "workbench.editorAssociations": {
+        "*.tsv": "default",
+        "{git,gitlens}:/**/*.{md,csv,svg}": "default",
+        "*.xlsx": "gc-excelviewer-excel-editor"
+    },
+    "workbench.startupEditor": "none",
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "git.confirmSync": false,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "yaml.customTags": [
+        "!Ref",
+        "!Sub",
+        "!GetAtt"
+    ],
+    "makefile.configureOnOpen": false,
+    "gitlens.views.scm.grouped.views": {
+        "commits": true,
+        "branches": true,
+        "remotes": true,
+        "stashes": false,
+        "tags": true,
+        "worktrees": true,
+        "contributors": true,
+        "repositories": false,
+        "searchAndCompare": false,
+        "launchpad": false
+    },
+    "chatgpt-helper.model": "gpt-4",
+    "roo-cline.allowedCommands": [
+        "npm test",
+        "npm install",
+        "tsc",
+        "git log",
+        "git diff",
+        "git show"
+    ],
+    "docker.extension.enableComposeLanguageServer": false
+}
