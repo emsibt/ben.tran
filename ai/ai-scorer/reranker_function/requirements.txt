@@ -1,2 +1,0 @@
-cohere==5.5.8
-requests==2.32.3
