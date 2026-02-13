@@ -1,16 +1,14 @@
 def backtracking_template(nums):
     res = []
 
-    def backtrack(start_index, current_path):
-        if is_solution(current_path):
-            res.append(current_path[:])
-            return 
+    def backtrack(start_index, curr_path):
+        if is_solution():
+            res.append(curr_path[:])
+            return
         
         for i in range(start_index, len(nums)):
-            current_path.append(nums[i])
-
-            backtrack(i, current_path)
-
-            current_path.pop()
+            curr_path.append(nums[i])
+            backtrack(i, curr_path)
+            curr_path.pop()
     backtrack(0, [])
     return res
