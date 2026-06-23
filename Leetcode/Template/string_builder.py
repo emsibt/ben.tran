@@ -1,5 +1,12 @@
+"""String Concatenation
+1. String.join(): O(n) (Python)
+2. StringBuilder: O(n) (Java, C#, etc.)
+"""
+
+
 def string_builder(s: str) -> str:
     array = []
-    for i in s:
-        array.append(i)
+    for char in s:
+        array.append(char)
+
     return "".join(array)

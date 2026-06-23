@@ -1,35 +1,54 @@
-def dfs_top_down(node, param):
-    if not node:
-        return True
+"""Input is a Binary Tree
+1. DFS(Preorder, Inorder, Postorder): O(n)
+2. BFS(Leval Order): O(n)
+"""
 
-    if not check_logic(node, param):
+
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def dfs_top_down(root: TreeNode, param) -> None:
+    if not root:
+        return True
+    if not check_logic(root, param):
         return False
 
-    new_param_left = update(param, node.val)
-    new_param_right = update(param, node.val)
-    return dfs_top_down(node.left, new_param_left) and dfs_top_down(node.right, new_param_right)
+    new_param_l = update(param, root.val)
+    new_param_r = update(param, root.val)
+    return dfs_top_down(root.left, new_param_l) and dfs_top_down(
+        root.right, new_param_r
+    )
 
-def dfs_bottom_up(node):
-    if not node:
+
+def dfs_bottom_up(root: TreeNode) -> int:
+    if not root:
         return 0
-    
-    left_result = dfs_bottom_up(node.left)
-    right_result = dfs_bottom_up(node.right)
 
-    my_res = process(node.val, left_result, right_result)
-    return my_res
+    l_res = dfs_bottom_up(root.left)
+    r_res = dfs_bottom_up(root.right)
 
-# BFS - deque
+    res = process(root.val, l_res, r_res)
+
+    return res
+
+
 from collections import deque
 
-def bfs(root: TreeNote) -> None:
-    queue = deque([root])
-    while queue:
-        size = len(queue)
-        for i in range(size):
-            node = queue.popleft()
-            print(node.val)
-            if node.left: queue.append(node.left)
-            if node.right: queue.append(node.right)
 
-        print or return
+def bfs(root: TreeNode) -> None:
+    q = deque([root])
+    while q:
+        size = len(q)
+        for i in range(size):
+            node = q.popleft()
+            print(node.val)
+            if node.left:
+                q.append(node.left)
+            if node.right:
+                q.append(node.right)
+
+        # process
