@@ -4,7 +4,7 @@ def solveDP(n, choices):
 
     for i in range(1, n+1):
         for choice in choices:
-            if i >= choices:
+            if i >= choice:
                 # min
                 dp[i] = min(dp[i], dp[i-choice] + 1)
                 #max
