@@ -2,7 +2,6 @@
 1. Using Stack
 """
 
-from typing import List
 
 
 class TreeNode:
@@ -12,7 +11,7 @@ class TreeNode:
         self.right = right
 
 
-def preorderTraversa(root: TreeNode) -> List[TreeNode]:
+def preorderTraversa(root: TreeNode) -> list[TreeNode]:
     if not root:
         return []
     stack = [root]
